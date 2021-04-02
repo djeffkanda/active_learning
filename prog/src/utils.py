@@ -6,48 +6,83 @@ Authors: D'Jeff Kanda, Gabriel McCarthy, Mohamed Ragued
 import os
 import tarfile
 from urllib.request import urlretrieve
-#
-# def make_dir(dir_name):
-#     """
-#     Create a directory safely
-#     Args:
-#         directory name
-#     """
-#     current_dir = os.getcwd()
-#     try:
-#         os.mkdir(os.path.join(current_dir, dir_name))
-#     except OSError:
-#         print("Failed to create {}".format(dir_name))
-#
-#
-# def download(download_url, local_destination, expected_bytes=None):
-#     """
-#     Download a file from download_url into local_destination if
-#     the file doesn't already exists.
-#     if expected_bytes is provided check if the downloaded file has the same
-#     number of bytes.
-#     """
-#     if os.path.exists(local_destination):
-#         print("{} already exists".format(local_destination))
-#     else:
-#         print("Downloading {}...".format(download_url))
-#         local_file, headers = urlretrieve(download_url, local_destination)
-#         file_stat = os.stat(local_destination)
-#         if expected_bytes:
-#             if file_stat.st_size == expected_bytes:
-#                 print("Successfully downloaded {}".format(local_destination))
-#
-#
-# # def download_and_extract_cifar10():
-# #     """
-# #     Download and extract cifar10 dataset. You can either use this function or
-# #     use the API provided by pytorch.
-# #     """
-# #     cifar_dir = os.path.join(os.getcwd(), "data")
-# #     make_dir("data")
-# #     local_file = os.path.join(cifar_dir, "tmp_file")
-# #     download(CIFAR_URL, local_file, CIFAR_SIZE)
-# #     tf = tarfile.open(local_file)
-# #     tf.extractall(path=cifar_dir)
-# #     os.remove(local_file)
-# #     tf.close()
+import torchvision.transforms as transforms
+from torchvision import datasets
+
+
+def get_data(data_augment: bool, dataset: str = 'mnistfashion'):
+    """
+    This function loads the dataset if it already exists, otherwise it downloads from pytorch dataset repository.
+
+    :param data_augment: if true, data transformation will be applied on the dataset
+    :param dataset: the name of the dataset to load or download ['mnist' or 'cifar100']
+    :return: train set and test set
+    """
+    if data_augment:
+        print('Data augmentation activated!')
+        if dataset == 'cifar100':
+            train_transform = transforms.Compose([
+                transforms.RandomRotation(20),
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomCrop(size=32, padding=4),
+                transforms.ColorJitter(brightness=.2, contrast=.2, hue=.05,
+                                       saturation=.05),
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            ])
+            base_transform = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            ])
+        else:
+            train_transform = transforms.Compose([
+                transforms.Resize(32),
+                transforms.RandomRotation(2),
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomCrop(size=32, padding=4),
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            ])
+            base_transform = transforms.Compose([
+                transforms.Resize(32),
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            ])
+    else:
+        if dataset == 'cifar100':
+            train_transform = transforms.Compose([
+                transforms.RandomRotation(20),
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomCrop(size=32, padding=4),
+                transforms.ColorJitter(brightness=.2, contrast=.2, hue=.05,
+                                       saturation=.05),
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            ])
+            base_transform = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            ])
+        else:
+            train_transform = transforms.Compose([
+                transforms.Resize(32),
+                transforms.RandomRotation(2),
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomCrop(size=32, padding=4),
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            ])
+            base_transform = transforms.Compose([
+                transforms.Resize(32),
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            ])
+    # Download the train and test set and apply transform on it
+    if dataset == 'cifar100':
+        train_set = datasets.CIFAR100(root='../data', train=True, download=True, transform=train_transform)
+        test_set = datasets.CIFAR100(root='../data', train=False, download=True, transform=base_transform)
+    else:
+        train_set = datasets.FashionMNIST(root='../data', train=True, download=True, transform=train_transform)
+        test_set = datasets.FashionMNIST(root='../data', train=False, download=True, transform=base_transform)
+
+    return train_set, test_set

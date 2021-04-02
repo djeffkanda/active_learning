@@ -1,8 +1,6 @@
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler, Sampler, Subset
-from typing import Union
-
 
 
 class MaskSampler(Sampler):
@@ -61,33 +59,49 @@ class DataManager(object):
         self.train_unlabeled_mask[shuffled_idx[:num_sample]] = 1
 
         train_labeled_index = shuffled_idx[:num_sample]
-
         self.current_train_set = Subset(train_dataset, train_labeled_index)
 
-        train_sampler, val_sampler = self.train_validation_split(len(self.current_train_set), validation, seed)
-        self.train_loader = DataLoader(self.current_train_set, batch_size, sampler=train_sampler, **kwargs)
-        self.validation_loader = DataLoader(self.current_train_set, batch_size, sampler=val_sampler, **kwargs)
+        # Create the loaders
+        train_sampler, val_sampler = self.train_validation_split(len(self.current_train_set), self.validation,
+                                                                 self.seed)
+        self.train_loader = DataLoader(self.current_train_set, self.batch_size, sampler=train_sampler, **self.kwargs)
+        self.validation_loader = DataLoader(self.current_train_set, self.batch_size, sampler=val_sampler, **self.kwargs)
         self.test_loader = DataLoader(test_dataset, batch_size, shuffle=True, **kwargs)
 
     def get_unlabeled_data(self):
-        return Subset(self.train_set, (self.train_unlabeled_mask == 0).nonzero())
+        """
+        This function return the unlabeled dataset and their corresponding indices.
+        :return:
+        unlabeled dataset and indices,
+        """
+        unlabeled_indices = (self.train_unlabeled_mask == 0).nonzero()
+        unlabeled_data = Subset(self.train_set, (self.train_unlabeled_mask == 0).nonzero())
+        return unlabeled_data, unlabeled_indices
 
-    def update_train_set(self,):
+    def update_train_set(self, index_to_label):
+        """
+        This function update the labeled dataset by adding the new data sample to label in the current train set
+        :param index_to_label: indices of new data to label
+        :return:
+        train_loader and validation_loader
+        """
         # TODO implement this function according to the discussion tomorrow
-        return
+        self.train_unlabeled_mask[index_to_label] = 1
+        self.current_train_set = Subset(self.train_set, self.train_unlabeled_mask.nonzero())
+        train_sampler, val_sampler = self.train_validation_split(len(self.current_train_set), self.validation,
+                                                                 self.seed)
+        self.train_loader = DataLoader(self.current_train_set, self.batch_size, sampler=train_sampler, **self.kwargs)
+        self.validation_loader = DataLoader(self.current_train_set, self.batch_size, sampler=val_sampler, **self.kwargs)
+        return self.train_loader, self.validation_loader
 
     @staticmethod
     def train_validation_split(num_samples, validation_ratio, seed=0):
         """
-        Returns two torch Samplers, one for training and the other for validation.
-        Both samplers are used with the training dataset (see __init__).
-
-        Args:
-            num_samples: number of samples to split between train and val set
-            validation_ratio: proportion of the train dataset used for validation set
-            seed: random seed for splitting train and validation set
-        Returns:
-            train and validation samplers
+        This function returns two samplers for training and validation data.
+        :param num_samples: total number of sample to split
+        :param validation_ratio: percentage of validation dataset
+        :param seed: random seed to use
+        :return:
         """
         torch.manual_seed(seed)
         num_val = int(num_samples * validation_ratio)
