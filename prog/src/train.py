@@ -63,5 +63,4 @@ if __name__ == "__main__":
     data_augment = args.data_aug
 
     train_set, test_set = get_data(data_augment, args.dataset)
-
     dm = DM(train_set, test_set, batch_size=batch_size)
