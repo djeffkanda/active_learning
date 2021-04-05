@@ -4,7 +4,6 @@ import warnings
 import torch
 import numpy as np
 from DataManager import DataManager as DM
-from query_strats.QueryStrategy import QueryStrategy
 from typing import Callable, Type
 from tqdm import tqdm
 
@@ -66,32 +65,153 @@ class TrainTestManager(object):
         Args:
             num_epochs: number of times to train the model
         """
+        # Initialize metrics container
+        metrics = {'train_loss': [],
+                   'train_accuracy': [],
+                   'val_loss': [],
+                   'val_accuracy': []}
+
+        # Create pytorch's train data_loader
+        train_loader = self.data_manager.get_train_set()
+        # train num_epochs times
+        for epoch in range(num_epochs):
+            print("Epoch: {} of {}".format(epoch + 1, num_epochs))
+            train_loss = 0.0
+
+            with tqdm(range(len(train_loader))) as t:
+                train_losses = []
+                train_accuracies = []
+                for i, data in enumerate(train_loader, 0):
+                    # transfer tensors to selected device
+                    train_inputs, train_labels = data[0].to(self.device), data[1].to(self.device)
+
+                    # zero the parameter gradients
+                    self.optimizer.zero_grad()
+
+                    # forward pass
+                    train_outputs = self.model(train_inputs)
+                    # computes loss using loss function loss_fn
+                    loss = self.loss_fn(train_outputs, train_labels)
+
+                    # Use autograd to compute the backward pass.
+                    loss.backward()
+
+                    # updates the weights using gradient descent
+                    self.optimizer.step()
+
+                    # Save losses for plotting purposes
+                    train_losses.append(loss.item())
+                    train_accuracies.append(accuracy(train_outputs, train_labels))
+
+                    # print metrics along progress bar
+                    train_loss += loss.item()
+                    t.set_postfix(loss='{:05.3f}'.format(train_loss / (i + 1)))
+                    t.update()
+
+            # evaluate the model on validation data after each epoch
+            mean_train_loss = np.mean(train_losses)
+            mean_train_accuracy = np.mean(train_accuracies)
+            mean_val_loss, mean_val_accuracy = self.evaluate_on_validation_set()
+            metrics['train_loss'].append(mean_train_loss)
+            metrics['train_accuracy'].append(mean_train_accuracy)
+            metrics['val_loss'].append(mean_val_loss)
+            metrics['val_accuracy'].append(mean_val_accuracy)
+
+            return metrics
 
     def train(self, num_epochs, complete_data_ratio):
         """
         Train the model until reaching complete_data_ratio of labeled instances
         """
+        # Initialize metrics container
+        self.metric_values['global_train_accuracy'] = []
+        self.metric_values['global_train_loss'] = []
+        self.metric_values['test_accuracy'] = []
+        self.metric_values['test_loss'] = []
+
+        for iteration in complete_data_ratio:  # TODO: Modify iterator depending on querier architecture
+            metrics = self.training_iteration(num_epochs)
+            self.evaluate_on_test_set()
+            # TODO update metrics
+
+            print('Finished iteration {} of {} of active learning process'.format(iteration,
+                                                                                  complete_data_ratio))  # TODO: change format
+            print('Querying new data...')
+            indices = self.querier.execute_query(self.model, self.data_manager.get_unlabeled_data())
+            self.data_manager.update_train_set(indices)
+            # TODO change depending on query and data_manager interactions
 
     def evaluate_on_validation_set(self):
         """
         function that evaluate the model on the validation set every epoch
         """
+        # switch to eval mode so that layers like batchnorm's layers nor dropout's layers
+        # works in eval mode instead of training mode
+        self.model.eval()
+
+        # Get validation data
+        val_loader = self.data_manager.get_validation_set()
+        validation_loss = 0.0
+        validation_losses = []
+        validation_accuracies = []
+
+        with torch.no_grad():
+            for j, val_data in enumerate(val_loader, 0):
+                # transfer tensors to the selected device
+                val_inputs, val_labels = val_data[0].to(self.device), val_data[1].to(self.device)
+
+                # forward pass
+                val_outputs = self.model(val_inputs)
+
+                # compute loss function
+                loss = self.loss_fn(val_outputs, val_labels)
+                validation_losses.append(loss.item())
+                validation_accuracies.append(accuracy(val_outputs, val_labels))
+                validation_loss += loss.item()
+
+        mean_val_loss = np.mean(validation_losses)
+        mean_val_accuracy = np.mean(validation_accuracies)
+
+        # displays metrics
+        print('Validation loss %.3f' % (validation_loss / len(val_loader)))
+
+        # switch back to train mode
+        self.model.train()
+
+        return mean_val_loss, mean_val_accuracy
 
     def evaluate_on_test_set(self):
         """
         function that evaluate the model on the test set every iteration of the
         active learning process
         """
+        losses = []
+        accuracies = []
+        test_loader = self.data_manager.get_test_set()
+        with torch.no_grad():
+            for data in test_loader:
+                test_inputs, test_labels = data[0].to(self.device), data[1].to(self.device)
+                test_outputs = self.model(test_inputs)
+                loss = self.loss_fn(test_outputs, test_labels)
+                losses.append(loss.item())
+                accuracies.append(accuracy(test_outputs, test_labels))
 
-    def accuracy(self, outputs, labels):
-        """
-        Computes the accuracy of the model
-        Args:
-            outputs: outputs predicted by the model
-            labels: real outputs of the data
-        Returns:
-            Accuracy of the model
-        """
+        self.metric_values['test_accuracy'].append(np.mean(accuracies))
+        self.metric_values['test_loss'].append(np.mean(losses))
+
+
+def accuracy(outputs, labels):
+    """
+    Computes the accuracy of the model
+    Args:
+        outputs: outputs predicted by the model
+        labels: real outputs of the data
+    Returns:
+        Accuracy of the model
+    """
+    predicted = outputs.argmax(dim=1)
+    correct = (predicted == labels).sum().item()
+    return correct / labels.size(0)
 
 
 def optimizer_setup(optimizer_class: Type[torch.optim.Optimizer], **hyperparameters) -> \
