@@ -8,16 +8,16 @@ class QueryStrategy(ABC):
     This class define a pooling strategy for active learning
     """
 
-    def __init__(self, dataset: DataManager, **kwargs):
+    def __init__(self, dm: DataManager, **kwargs):
         """
         Initialize the query strategy object
         :param dataset: dataset used in the pooling strategy implemented.
         :param kwargs: others key arguments to use.
         """
-        self.dataset = dataset
+        self.dm = dm
 
-    def get_dataset(self):
-        return self.dataset
+    def get_datamanager(self):
+        return self.dm
 
     # def update
 

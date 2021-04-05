@@ -11,12 +11,7 @@ Other: Suggestions are welcome
 
 import argparse
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import torchvision.transforms as transforms
-
-from torchvision import datasets
+from prog.src.query_strats.RandomQueryStrategy import RandomQueryStrategy
 from utils import get_data
 from DataManager import DataManager as DM
 
@@ -45,6 +40,10 @@ def argument_parser():
                         help='Percentage of training data to use for validation')
     parser.add_argument('--lr', type=float, default=0.001,
                         help='Learning rate')
+    parser.add_argument('--query_size', type=int, default=200,
+                        help='Size of sample to label per query')
+    parser.add_argument('--train_set_threshold', type=float, default=1,
+                        help='Percentage of training data as threshold to stop active learning process')
     parser.add_argument('--data_aug', action='store_true',
                         help="Data augmentation")
     parser.add_argument('--save_path', type=str, default="./", help='The path where the output will be stored,'
@@ -60,7 +59,16 @@ if __name__ == "__main__":
     num_epochs = args.num_epochs
     val_set = args.validation
     learning_rate = args.lr
+    train_set_threshold = args.train_set_threshold
+    query_size = args.query_size
     data_augment = args.data_aug
 
     train_set, test_set = get_data(data_augment, args.dataset)
     dm = DM(train_set, test_set, batch_size=batch_size)
+    query_strat = RandomQueryStrategy(dm)
+
+    for i in range(10):
+        idx = query_strat.execute_query(query_size)
+        query_strat.update_label(idx)
+
+
