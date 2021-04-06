@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from prog.src.DataManager import DataManager
+from DataManager import DataManager
 
 
 class QueryStrategy(ABC):

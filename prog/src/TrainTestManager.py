@@ -117,29 +117,35 @@ class TrainTestManager(object):
             metrics['val_loss'].append(mean_val_loss)
             metrics['val_accuracy'].append(mean_val_accuracy)
 
-            return metrics
+        self.metric_values['global_train_loss'].append(np.mean(metrics['train_loss']))
+        self.metric_values['global_train_accuracy'].append(np.mean(metrics['train_accuracy']))
+        self.metric_values['global_val_loss'].append(np.mean(metrics['val_loss']))
+        self.metric_values['global_val_accuracy'].append(np.mean(metrics['val_accuracy']))
 
-    def train(self, num_epochs, complete_data_ratio):
+    def train(self, num_epochs, num_query, query_size):
         """
         Train the model until reaching complete_data_ratio of labeled instances
         """
         # Initialize metrics container
-        self.metric_values['global_train_accuracy'] = []
         self.metric_values['global_train_loss'] = []
-        self.metric_values['test_accuracy'] = []
+        self.metric_values['global_train_accuracy'] = []
+        self.metric_values['global_val_loss'] = []
+        self.metric_values['global_val_accuracy'] = []
         self.metric_values['test_loss'] = []
+        self.metric_values['test_accuracy'] = []
 
-        for iteration in complete_data_ratio:  # TODO: Modify iterator depending on querier architecture
-            metrics = self.training_iteration(num_epochs)
+        for iteration in range(num_query):
+            self.training_iteration(num_epochs)
             self.evaluate_on_test_set()
-            # TODO update metrics
 
             print('Finished iteration {} of {} of active learning process'.format(iteration,
-                                                                                  complete_data_ratio))  # TODO: change format
+                                                                                  num_query))
             print('Querying new data...')
-            indices = self.querier.execute_query(self.model, self.data_manager.get_unlabeled_data())
-            self.data_manager.update_train_set(indices)
-            # TODO change depending on query and data_manager interactions
+            indices = self.querier.execute_query(query_size, self.model)
+            print('Adding {} new data to train set'.format(query_size))
+            self.querier.update_label(indices)  # update labels
+
+        print('Finished active learning process')
 
     def evaluate_on_validation_set(self):
         """
