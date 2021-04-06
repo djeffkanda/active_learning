@@ -68,7 +68,7 @@ if __name__ == "__main__":
     query_strat = RandomQueryStrategy(dm)
 
     for i in range(10):
-        idx = query_strat.execute_query(query_size)
+        idx = query_strat.execute_query(query_size, 'test')
         query_strat.update_label(idx)
 
 

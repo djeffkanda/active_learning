@@ -29,11 +29,13 @@ class RandomQueryStrategy(QueryStrategy):
         self.dm.update_train_set(idx)
         return self.dm
 
-    def execute_query(self, query_size):
+    def execute_query(self, query_size, model):
         """
         This function returns the indices of new data sample to label.
 
         :param query_size: number of sample to select for labelling
+        :param model: model used for predicting scores on which querying is based
+        (useless here, used for uniform functions)
         :return:
         idx: indices of unlabeled data sample to label
         """
