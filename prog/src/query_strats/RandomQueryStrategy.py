@@ -1,5 +1,5 @@
 import torch
-from prog.src.DataManager import DataManager
+from ..DataManager import DataManager
 from .QueryStrategy import QueryStrategy
 
 

@@ -11,7 +11,7 @@ Other: Suggestions are welcome
 
 import argparse
 
-from prog.src.query_strats.RandomQueryStrategy import RandomQueryStrategy
+from query_strats.RandomQueryStrategy import RandomQueryStrategy
 from utils import get_data
 from DataManager import DataManager as DM
 
