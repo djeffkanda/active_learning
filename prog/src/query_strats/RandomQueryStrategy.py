@@ -1,5 +1,5 @@
 import torch
-from ..DataManager import DataManager
+from query_strats.DataManager import DataManager
 from .QueryStrategy import QueryStrategy
 
 
@@ -16,7 +16,7 @@ class RandomQueryStrategy(QueryStrategy):
         """
         super().__init__(dm, **kwargs)
 
-    def get_dataset(self):
+    def get_datamanager(self):
         return self.dm
 
     def update_label(self, idx):
