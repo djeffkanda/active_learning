@@ -45,13 +45,13 @@ def argument_parser():
                         help='Percentage of training data to use for validation')
     parser.add_argument('--lr', type=float, default=0.001,
                         help='Learning rate')
-    parser.add_argument('--initial_data_ratio', type=float, default=0.99,
+    parser.add_argument('--initial_data_ratio', type=float, default=0.05,
                         help='Percentage of training data randomly selected on first iteration of active'
                              'learning process')
     parser.add_argument('--query_strategy', type=str, default='Random',
                         choices=['Random', 'Uncertainty', 'Margin', 'Entropy'],
                         help='Type of strategy to use for querying data in active learning process')
-    parser.add_argument('--query_size', type=int, default=1,
+    parser.add_argument('--query_size', type=int, default=100,
                         help='Size of sample to label per query')
     parser.add_argument('--train_set_threshold', type=float, default=1,
                         help='Percentage of training data as threshold to stop active learning process')
@@ -126,5 +126,5 @@ if __name__ == "__main__":
                                      optimizer_factory=optimizer_factory,
                                      validation=val_set)
 
-    model_trainer.train(num_epochs=num_epochs, num_query=1, query_size=query_size)
+    model_trainer.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
     # TODO adjust num_query with threshold
