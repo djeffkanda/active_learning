@@ -132,7 +132,7 @@ class TrainTestManager(object):
             self.training_iteration(num_epochs)
             self.evaluate_on_test_set()
 
-            print('Finished iteration {} of {} of active learning process'.format(iteration,
+            print('Finished iteration {} of {} of active learning process'.format(iteration+1,
                                                                                   num_query))
             print('Accuracy on test set: {:05.3f}%'.format(self.metric_values['test_accuracy'][iteration]*100))
             print('Querying new data...')
