@@ -41,21 +41,16 @@ def get_data(data_augment: bool, dataset: str = 'mnistfashion'):
                 transforms.RandomHorizontalFlip(),
                 transforms.RandomCrop(size=32, padding=4),
                 transforms.ToTensor(),
-                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+                transforms.Normalize(0.5, 0.5)
             ])
             base_transform = transforms.Compose([
                 transforms.Resize(32),
                 transforms.ToTensor(),
-                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+                transforms.Normalize(0.5, 0.5)
             ])
     else:
         if dataset == 'cifar100':
             train_transform = transforms.Compose([
-                transforms.RandomRotation(20),
-                transforms.RandomHorizontalFlip(),
-                transforms.RandomCrop(size=32, padding=4),
-                transforms.ColorJitter(brightness=.2, contrast=.2, hue=.05,
-                                       saturation=.05),
                 transforms.ToTensor(),
                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
             ])
@@ -66,16 +61,13 @@ def get_data(data_augment: bool, dataset: str = 'mnistfashion'):
         else:
             train_transform = transforms.Compose([
                 transforms.Resize(32),
-                transforms.RandomRotation(2),
-                transforms.RandomHorizontalFlip(),
-                transforms.RandomCrop(size=32, padding=4),
                 transforms.ToTensor(),
-                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+                transforms.Normalize(0.5, 0.5)
             ])
             base_transform = transforms.Compose([
                 transforms.Resize(32),
                 transforms.ToTensor(),
-                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+                transforms.Normalize(0.5, 0.5)
             ])
     # Download the train and test set and apply transform on it
     if dataset == 'cifar100':

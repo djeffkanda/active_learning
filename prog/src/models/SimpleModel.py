@@ -18,7 +18,7 @@ class SimpleModel(CNNBaseModel):
     Modèle très simple dans le style conv-relu-bn x3 +2 FC (à des fins de test)
     """
 
-    def __init__(self, num_classes=10, init_weights=True):
+    def __init__(self, num_classes=10, num_channels=1, init_weights=True):
         """
         Builds SimpleModel.
         Args:
@@ -29,7 +29,7 @@ class SimpleModel(CNNBaseModel):
         super(SimpleModel, self).__init__()
 
         self.conv_layers = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels=num_channels, out_channels=32, kernel_size=3, padding=1),
             nn.BatchNorm2d(32),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),

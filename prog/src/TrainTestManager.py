@@ -3,7 +3,6 @@
 import warnings
 import torch
 import numpy as np
-from DataManager import DataManager as DM
 from typing import Callable, Type
 from tqdm import tqdm
 
@@ -45,12 +44,7 @@ class TrainTestManager(object):
             device_name = 'cpu'
 
         self.device = torch.device(device_name)
-        if validation is not None:
-            self.data_manager = DM(trainset, testset, batch_size=batch_size, validation=validation,
-                                   initial_train_dataset_ratio=initial_train_dataset_ratio)
-        else:
-            self.data_manager = DM(trainset, testset, batch_size=batch_size,
-                                   initial_train_dataset_ratio=initial_train_dataset_ratio)
+
         self.loss_fn = loss_fn
         self.model = model
         self.querier = querier
@@ -72,7 +66,7 @@ class TrainTestManager(object):
                    'val_accuracy': []}
 
         # Create pytorch's train data_loader
-        train_loader = self.data_manager.get_train_set()
+        train_loader = self.querier.get_datamanager().get_train_set()
         # train num_epochs times
         for epoch in range(num_epochs):
             print("Epoch: {} of {}".format(epoch + 1, num_epochs))
@@ -138,8 +132,9 @@ class TrainTestManager(object):
             self.training_iteration(num_epochs)
             self.evaluate_on_test_set()
 
-            print('Finished iteration {} of {} of active learning process'.format(iteration,
+            print('Finished iteration {} of {} of active learning process'.format(iteration+1,
                                                                                   num_query))
+            print('Accuracy on test set: {:05.3f}%'.format(self.metric_values['test_accuracy'][iteration]*100))
             print('Querying new data...')
             indices = self.querier.execute_query(query_size, self.model)
             print('Adding {} new data to train set'.format(query_size))
@@ -156,7 +151,7 @@ class TrainTestManager(object):
         self.model.eval()
 
         # Get validation data
-        val_loader = self.data_manager.get_validation_set()
+        val_loader = self.querier.get_datamanager().get_validation_set()
         validation_loss = 0.0
         validation_losses = []
         validation_accuracies = []
@@ -193,7 +188,7 @@ class TrainTestManager(object):
         """
         losses = []
         accuracies = []
-        test_loader = self.data_manager.get_test_set()
+        test_loader = self.querier.get_datamanager().get_test_set()
         with torch.no_grad():
             for data in test_loader:
                 test_inputs, test_labels = data[0].to(self.device), data[1].to(self.device)
