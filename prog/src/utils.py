@@ -3,11 +3,9 @@ University of Sherbrooke
 NN Class Project
 Authors: D'Jeff Kanda, Gabriel McCarthy, Mohamed Ragued
 """
-import os
-import tarfile
-from urllib.request import urlretrieve
 import torchvision.transforms as transforms
 from torchvision import datasets
+import torch.nn.functional as F
 
 
 def get_data(data_augment: bool, dataset: str = 'mnistfashion'):
@@ -78,3 +76,13 @@ def get_data(data_augment: bool, dataset: str = 'mnistfashion'):
         test_set = datasets.FashionMNIST(root='../data', train=False, download=True, transform=base_transform)
 
     return train_set, test_set
+
+
+def predict_proba(scores):
+    """
+    Predicts probability from the score
+    :arg
+        scores: the score values from the model
+    """
+    prob = F.softmax(scores, dim=1)
+    return prob

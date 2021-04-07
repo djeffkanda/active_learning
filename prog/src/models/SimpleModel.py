@@ -14,8 +14,7 @@ from models.CNNBaseModel import CNNBaseModel
 
 class SimpleModel(CNNBaseModel):
     """
-    Class that implements a very basic model.
-    Modèle très simple dans le style conv-relu-bn x3 +2 FC (à des fins de test)
+    Class that implements a very basic model conv-relu-bn x3 +2 FC.
     """
 
     def __init__(self, num_classes=10, num_channels=1, init_weights=True):

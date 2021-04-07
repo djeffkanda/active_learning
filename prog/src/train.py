@@ -39,19 +39,19 @@ def argument_parser():
                         help='The size of the training batch')
     parser.add_argument('--optimizer', type=str, default="Adam", choices=["Adam", "SGD"],
                         help="The optimizer to use for training the model")
-    parser.add_argument('--num-epochs', type=int, default=10,
+    parser.add_argument('--num-epochs', type=int, default=20,
                         help='The number of epochs')
     parser.add_argument('--validation', type=float, default=0.1,
                         help='Percentage of training data to use for validation')
     parser.add_argument('--lr', type=float, default=0.001,
                         help='Learning rate')
-    parser.add_argument('--initial_data_ratio', type=float, default=0.2,
+    parser.add_argument('--initial_data_ratio', type=float, default=0.99,
                         help='Percentage of training data randomly selected on first iteration of active'
                              'learning process')
     parser.add_argument('--query_strategy', type=str, default='Random',
                         choices=['Random', 'Uncertainty', 'Margin', 'Entropy'],
                         help='Type of strategy to use for querying data in active learning process')
-    parser.add_argument('--query_size', type=int, default=200,
+    parser.add_argument('--query_size', type=int, default=1,
                         help='Size of sample to label per query')
     parser.add_argument('--train_set_threshold', type=float, default=1,
                         help='Percentage of training data as threshold to stop active learning process')
@@ -126,7 +126,5 @@ if __name__ == "__main__":
                                      optimizer_factory=optimizer_factory,
                                      validation=val_set)
 
-    model_trainer.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
+    model_trainer.train(num_epochs=num_epochs, num_query=1, query_size=query_size)
     # TODO adjust num_query with threshold
-
-
