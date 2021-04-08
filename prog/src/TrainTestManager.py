@@ -13,13 +13,8 @@ class TrainTestManager(object):
     """
 
     def __init__(self, model, querier,
-                 trainset: torch.utils.data.Dataset,
-                 testset: torch.utils.data.Dataset,
                  loss_fn: torch.nn.Module,
                  optimizer_factory: Callable[[torch.nn.Module], torch.optim.Optimizer],
-                 batch_size=1,
-                 initial_train_dataset_ratio=0.2,
-                 validation=None,
                  use_cuda=False):
         """
         Args:

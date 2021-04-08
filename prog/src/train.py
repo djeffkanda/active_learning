@@ -18,6 +18,9 @@ from query_strats.DataManager import DataManager as DM
 from TrainTestManager import TrainTestManager, optimizer_setup
 
 from models.SimpleModel import SimpleModel
+from models.SENet import SENet
+from models.ResNet import ResNet
+from models.DenseNet import DenseNet
 from query_strats.RandomQueryStrategy import RandomQueryStrategy
 
 
@@ -33,7 +36,7 @@ def argument_parser():
                                                  "selection for in the training process"
                                      )
     parser.add_argument('--model', type=str, default="BasicCNN",
-                        choices=["BasicCNN", "SENet"])
+                        choices=["BasicCNN", "SENet", "ResNet", "DenseNet"])
     parser.add_argument('--dataset', type=str, default="mnistfashion", choices=["cifar100", "mnistfashion"])
     parser.add_argument('--batch_size', type=int, default=20,
                         help='The size of the training batch')
@@ -99,11 +102,11 @@ if __name__ == "__main__":
     if args.model == 'BasicCNN':
         model = SimpleModel(num_channels=num_channels, num_classes=num_classes)
     elif args.model == 'SENet':
-        # model = SENet(num_channels=num_channels, num_classes=num_classes))
-        pass
+        model = SENet(num_channels=num_channels, num_classes=num_classes)
     elif args.model == 'ResNet':
-        # model = ResNet(num_channels=num_channels, num_classes=num_classes))
-        pass
+        model = ResNet(num_channels=num_channels, num_classes=num_classes)
+    elif args.model == 'DenseNet':
+        model = DenseNet(num_channels=num_channels, num_classes=num_classes)
 
     if args.query_strategy == 'Random':
         query_strategy = RandomQueryStrategy(dm)
@@ -119,12 +122,8 @@ if __name__ == "__main__":
 
     model_trainer = TrainTestManager(model=model,
                                      querier=query_strategy,
-                                     trainset=train_set,
-                                     testset=test_set,
                                      loss_fn=nn.CrossEntropyLoss(),
-                                     batch_size=batch_size,
-                                     optimizer_factory=optimizer_factory,
-                                     validation=val_set)
+                                     optimizer_factory=optimizer_factory)
 
     model_trainer.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
     # TODO adjust num_query with threshold
