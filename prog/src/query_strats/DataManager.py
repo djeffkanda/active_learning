@@ -87,7 +87,8 @@ class DataManager(object):
         """
         # TODO implement this function according to the discussion tomorrow
         self.train_unlabeled_mask[index_to_label] = 1
-        self.current_train_set = Subset(self.train_set, self.train_unlabeled_mask.nonzero())
+        lbl_sample_idx = self.train_unlabeled_mask.nonzero().squeeze()
+        self.current_train_set = Subset(self.train_set, lbl_sample_idx)
         train_sampler, val_sampler = self.train_validation_split(len(self.current_train_set), self.validation,
                                                                  self.seed)
         self.train_loader = DataLoader(self.current_train_set, self.batch_size, sampler=train_sampler, **self.kwargs)
