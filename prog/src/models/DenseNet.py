@@ -1,5 +1,9 @@
 # -*- coding:utf-8 -*-
-
+"""
+University of Sherbrooke
+NN Class Project
+Authors: D'Jeff Kanda, Gabriel McCarthy, Mohamed Ragued
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

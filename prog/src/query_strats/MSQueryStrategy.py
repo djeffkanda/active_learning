@@ -4,7 +4,7 @@ from .QueryStrategy import QueryStrategy
 from models.CNNBaseModel import CNNBaseModel
 
 
-class EntropyQueryStrategy(QueryStrategy):
+class MSQueryStrategy(QueryStrategy):
     """
     This class define a pooling strategy for active learning that randomly choose sample to label
     """
@@ -49,22 +49,20 @@ class EntropyQueryStrategy(QueryStrategy):
         unlabeled_data, idx = self.dm.get_unlabeled_data()
         # unlabeled_data = unlabeled_data[:]
 
-        entropies = list()
+        probs_max = list()
         model.eval()
         with torch.no_grad():
             for data in unlabeled_data_loader:
                 inputs = data[0].to(device)
                 probs = model.predict_proba(inputs)
-                log_probs = torch.log(probs)
-                entropy = - probs * log_probs
-                entropy = torch.sum(entropy, dim=1)
-                entropies.append(entropy)
-                # idx_from_loader.append(data[2])
+                prob_max = torch.topk(probs, k=2, dim=1, largest=True, sorted=True,)[0]
+                prob_max_margin = prob_max[:, 0] - prob_max[:, 1]
+                probs_max.append(prob_max_margin)
 
-        entropies = torch.cat(entropies)
+        probs_max = torch.cat(probs_max)
         # idx_from_loader = torch.cat(idx_from_loader)
-        entropies_argsort = torch.argsort(entropies, descending=True)
+        probs_min_max = torch.argsort(probs_max, descending=False)
 
-        selected_idx = entropies_argsort[:query_size]
+        selected_idx = probs_min_max[:query_size]
         model.train()
         return idx[selected_idx]

@@ -72,12 +72,12 @@ class CNNBaseModel(nn.Module):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.load_state_dict(torch.load(file_path, map_location=device))
 
-    def predict_proba(self, X):
+    def predict_proba(self, x):
         """
         Predicts probability from the score
         :arg
             scores: the score values from the model
         """
-        scores = self.forward(X)
+        scores = self.forward(x)
         prob = F.softmax(scores, dim=1)
         return prob

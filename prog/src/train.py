@@ -3,10 +3,8 @@
 
 """
 University of Sherbrooke
-Date:
-Authors: Mamadou Mountagha BAH & Pierre-Marc Jodoin
-License: Opensource, free to use
-Other: Suggestions are welcome
+NN Class Project
+Authors: D'Jeff Kanda, Gabriel McCarthy, Mohamed Ragued
 """
 
 import argparse
@@ -23,7 +21,8 @@ from models.ResNet import ResNet
 from models.DenseNet import DenseNet
 from query_strats.RandomQueryStrategy import RandomQueryStrategy
 from query_strats.EntropyQueryStrategy import EntropyQueryStrategy
-
+from query_strats.LCQueryStrategy import LCQueryStrategy
+from query_strats.MSQueryStrategy import MSQueryStrategy
 
 def argument_parser():
     """
@@ -53,7 +52,7 @@ def argument_parser():
                         help='Percentage of training data randomly selected on first iteration of active'
                              'learning process')
     parser.add_argument('--query_strategy', type=str, default='Random',
-                        choices=['Random', 'Uncertainty', 'Margin', 'Entropy'],
+                        choices=['Random', 'LC', 'Margin', 'Entropy'],
                         help='Type of strategy to use for querying data in active learning process')
     parser.add_argument('--query_size', type=int, default=100,
                         help='Size of sample to label per query')
@@ -79,6 +78,7 @@ if __name__ == "__main__":
     query_size = args.query_size
     data_augment = args.data_aug
 
+    num_query = 0
     # Loading the data
     train_set, test_set = get_data(data_augment, args.dataset)
     if val_set is not None:
@@ -111,11 +111,11 @@ if __name__ == "__main__":
 
     if args.query_strategy == 'Random':
         query_strategy = RandomQueryStrategy(dm)
-    elif args.query_strategy == 'Uncertainty':
-        #  query_strategy = UncertaintyQueryStrategy(dm)
+    elif args.query_strategy == 'LC':
+        query_strategy = LCQueryStrategy(dm)
         pass
     elif args.query_strategy == 'Margin':
-        #  query_strategy = MarginQueryStrategy(dm)
+        query_strategy = MSQueryStrategy(dm)
         pass
     elif args.query_strategy == 'Entropy':
         query_strategy = EntropyQueryStrategy(dm)
@@ -124,7 +124,9 @@ if __name__ == "__main__":
     model_trainer = TrainTestManager(model=model,
                                      querier=query_strategy,
                                      loss_fn=nn.CrossEntropyLoss(),
-                                     optimizer_factory=optimizer_factory)
+                                     optimizer_factory=optimizer_factory,
+                                     use_cuda=True)
 
-    model_trainer.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
+    num_query = len(train_set) * train_set_threshold * (1 - initial_data_ratio) // query_size
+    model_trainer.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size)
     # TODO adjust num_query with threshold

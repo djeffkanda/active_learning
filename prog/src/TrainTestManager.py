@@ -110,6 +110,7 @@ class TrainTestManager(object):
         self.metric_values['global_train_accuracy'].append(np.mean(metrics['train_accuracy']))
         self.metric_values['global_val_loss'].append(np.mean(metrics['val_loss']))
         self.metric_values['global_val_accuracy'].append(np.mean(metrics['val_accuracy']))
+        self.metric_values['num_sample'].append(len(self.querier.get_datamanager().get_current_training_set()))
 
     def train(self, num_epochs, num_query, query_size):
         """
@@ -122,8 +123,9 @@ class TrainTestManager(object):
         self.metric_values['global_val_accuracy'] = []
         self.metric_values['test_loss'] = []
         self.metric_values['test_accuracy'] = []
+        self.metric_values['num_sample'] = []
 
-        for iteration in range(num_query+1):
+        for iteration in range(int(num_query) + 1):
             self.training_iteration(num_epochs)
             self.evaluate_on_test_set()
 
@@ -132,7 +134,7 @@ class TrainTestManager(object):
 
             if iteration < num_query:
                 print('Querying new data...')
-                indices = self.querier.execute_query(query_size, self.model)
+                indices = self.querier.execute_query(query_size, self.model, device=self.device, batch=1000)
                 print('Adding {} new data to train set'.format(query_size))
                 self.querier.update_label(indices)  # update labels
 
