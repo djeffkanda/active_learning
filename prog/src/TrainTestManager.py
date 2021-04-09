@@ -136,7 +136,7 @@ class TrainTestManager(object):
                                                                                   num_query))
             print('Accuracy on test set: {:05.3f}%'.format(self.metric_values['test_accuracy'][iteration]*100))
             print('Querying new data...')
-            indices = self.querier.execute_query(query_size, self.model)
+            indices = self.querier.execute_query(query_size, self.model, self.device, 1000)
             print('Adding {} new data to train set'.format(query_size))
             self.querier.update_label(indices)  # update labels
 

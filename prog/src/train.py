@@ -19,6 +19,7 @@ from TrainTestManager import TrainTestManager, optimizer_setup
 
 from models.SimpleModel import SimpleModel
 from query_strats.RandomQueryStrategy import RandomQueryStrategy
+from query_strats.EntropyQueryStrategy import EntropyQueryStrategy
 
 
 def argument_parser():
@@ -45,7 +46,7 @@ def argument_parser():
                         help='Percentage of training data to use for validation')
     parser.add_argument('--lr', type=float, default=0.001,
                         help='Learning rate')
-    parser.add_argument('--initial_data_ratio', type=float, default=0.05,
+    parser.add_argument('--initial_data_ratio', type=float, default=0.01,
                         help='Percentage of training data randomly selected on first iteration of active'
                              'learning process')
     parser.add_argument('--query_strategy', type=str, default='Random',
@@ -114,7 +115,7 @@ if __name__ == "__main__":
         #  query_strategy = MarginQueryStrategy(dm)
         pass
     elif args.query_strategy == 'Entropy':
-        #  query_strategy = EntropyQueryStrategy(dm)
+        query_strategy = EntropyQueryStrategy(dm)
         pass
 
     model_trainer = TrainTestManager(model=model,
@@ -124,7 +125,8 @@ if __name__ == "__main__":
                                      loss_fn=nn.CrossEntropyLoss(),
                                      batch_size=batch_size,
                                      optimizer_factory=optimizer_factory,
-                                     validation=val_set)
+                                     validation=val_set,
+                                     use_cuda=True)
 
     model_trainer.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
     # TODO adjust num_query with threshold

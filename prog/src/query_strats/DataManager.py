@@ -74,9 +74,14 @@ class DataManager(object):
         :return:
         unlabeled dataset and indices,
         """
-        unlabeled_indices = (self.train_unlabeled_mask == 0).nonzero()
-        unlabeled_data = Subset(self.train_set, (self.train_unlabeled_mask == 0).nonzero())
+        unlabeled_indices = (self.train_unlabeled_mask == 0).nonzero().squeeze()
+        unlabeled_data = Subset(self.train_set, unlabeled_indices)
         return unlabeled_data, unlabeled_indices
+
+    def get_unlabelled_data_loader(self, batch):
+        data, idx = self.get_unlabeled_data()
+        loader = DataLoader(data, batch, shuffle=False, **self.kwargs)
+        return loader, idx
 
     def update_train_set(self, index_to_label):
         """
@@ -85,7 +90,6 @@ class DataManager(object):
         :return:
         train_loader and validation_loader
         """
-        # TODO implement this function according to the discussion tomorrow
         self.train_unlabeled_mask[index_to_label] = 1
         lbl_sample_idx = self.train_unlabeled_mask.nonzero().squeeze()
         self.current_train_set = Subset(self.train_set, lbl_sample_idx)
