@@ -13,13 +13,8 @@ class TrainTestManager(object):
     """
 
     def __init__(self, model, querier,
-                 trainset: torch.utils.data.Dataset,
-                 testset: torch.utils.data.Dataset,
                  loss_fn: torch.nn.Module,
                  optimizer_factory: Callable[[torch.nn.Module], torch.optim.Optimizer],
-                 batch_size=1,
-                 initial_train_dataset_ratio=0.2,
-                 validation=None,
                  use_cuda=False):
         """
         Args:
@@ -128,17 +123,18 @@ class TrainTestManager(object):
         self.metric_values['test_loss'] = []
         self.metric_values['test_accuracy'] = []
 
-        for iteration in range(num_query):
+        for iteration in range(num_query+1):
             self.training_iteration(num_epochs)
             self.evaluate_on_test_set()
 
-            print('Finished iteration {} of {} of active learning process'.format(iteration+1,
-                                                                                  num_query))
-            print('Accuracy on test set: {:05.3f}%'.format(self.metric_values['test_accuracy'][iteration]*100))
-            print('Querying new data...')
-            indices = self.querier.execute_query(query_size, self.model, self.device, 1000)
-            print('Adding {} new data to train set'.format(query_size))
-            self.querier.update_label(indices)  # update labels
+            print('Finished iteration {} of {} of active learning process'.format(iteration+1, num_query+1))
+            print('Accuracy on test set: {:05.3f}%'.format(self.metric_values['test_accuracy'][iteration] * 100))
+
+            if iteration < num_query:
+                print('Querying new data...')
+                indices = self.querier.execute_query(query_size, self.model)
+                print('Adding {} new data to train set'.format(query_size))
+                self.querier.update_label(indices)  # update labels
 
         print('Finished active learning process')
 
