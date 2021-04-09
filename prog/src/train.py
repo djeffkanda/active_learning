@@ -14,6 +14,7 @@ import torch.optim as optim
 import torch.nn as nn
 
 from utils import get_data
+from viz import plot_query_strategy_metrics
 from query_strats.DataManager import DataManager as DM
 from TrainTestManager import TrainTestManager, optimizer_setup
 
@@ -119,7 +120,6 @@ if __name__ == "__main__":
         pass
     elif args.query_strategy == 'Entropy':
         query_strategy = EntropyQueryStrategy(dm)
-        pass
 
     model_trainer = TrainTestManager(model=model,
                                      querier=query_strategy,
@@ -127,4 +127,5 @@ if __name__ == "__main__":
                                      optimizer_factory=optimizer_factory)
 
     model_trainer.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
+    plot_query_strategy_metrics(model_trainer, args.save_path)
     # TODO adjust num_query with threshold

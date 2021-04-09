@@ -5,6 +5,7 @@ import torch
 import numpy as np
 from typing import Callable, Type
 from tqdm import tqdm
+from query_strats.QueryStrategy import QueryStrategy
 
 
 class TrainTestManager(object):
@@ -12,7 +13,7 @@ class TrainTestManager(object):
     Class used to train and test model given model and query strategy
     """
 
-    def __init__(self, model, querier,
+    def __init__(self, model, querier: QueryStrategy,
                  loss_fn: torch.nn.Module,
                  optimizer_factory: Callable[[torch.nn.Module], torch.optim.Optimizer],
                  use_cuda=False):
@@ -120,21 +121,26 @@ class TrainTestManager(object):
         self.metric_values['global_train_accuracy'] = []
         self.metric_values['global_val_loss'] = []
         self.metric_values['global_val_accuracy'] = []
-        self.metric_values['test_loss'] = []
-        self.metric_values['test_accuracy'] = []
+        self.metric_values['global_test_loss'] = []
+        self.metric_values['global_test_accuracy'] = []
+        self.metric_values['number_of_data'] = []
 
-        for iteration in range(num_query+1):
+        self.metric_values['number_of_data'].append(len(self.querier.get_datamanager().get_train_set()) *
+                                                    self.querier.get_datamanager().batch_size)
+
+        for iteration in range(num_query + 1):
             self.training_iteration(num_epochs)
             self.evaluate_on_test_set()
 
-            print('Finished iteration {} of {} of active learning process'.format(iteration+1, num_query+1))
-            print('Accuracy on test set: {:05.3f}%'.format(self.metric_values['test_accuracy'][iteration] * 100))
+            print('Finished iteration {} of {} of active learning process'.format(iteration + 1, num_query + 1))
+            print('Accuracy on test set: {:05.3f}%'.format(self.metric_values['global_test_accuracy'][iteration] * 100))
 
             if iteration < num_query:
                 print('Querying new data...')
                 indices = self.querier.execute_query(query_size, self.model)
                 print('Adding {} new data to train set'.format(query_size))
                 self.querier.update_label(indices)  # update labels
+                self.metric_values['number_of_data'].append(self.metric_values['number_of_data'][iteration]+query_size)
 
         print('Finished active learning process')
 
@@ -193,8 +199,8 @@ class TrainTestManager(object):
                 losses.append(loss.item())
                 accuracies.append(accuracy(test_outputs, test_labels))
 
-        self.metric_values['test_accuracy'].append(np.mean(accuracies))
-        self.metric_values['test_loss'].append(np.mean(losses))
+        self.metric_values['global_test_loss'].append(np.mean(losses))
+        self.metric_values['global_test_accuracy'].append(np.mean(accuracies))
 
 
 def accuracy(outputs, labels):
