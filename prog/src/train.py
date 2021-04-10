@@ -136,7 +136,7 @@ if __name__ == "__main__":
         elif args.mode == 'Compare':
             random_query = RandomQueryStrategy(copy.deepcopy(dm))
             random_model_trainer = TrainTestManager(model=model,
-                                                    querier=query_strategy,
+                                                    querier=random_query,
                                                     loss_fn=nn.CrossEntropyLoss(),
                                                     optimizer_factory=optimizer_factory)
             # Training
@@ -146,7 +146,7 @@ if __name__ == "__main__":
             print('Training using {} Query Strategy'.format(query_strategy.__name__))
             model_trainer.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
 
-            plot_compare_to_random_metrics(model_trainer,random_model_trainer, args.save_path)
+            plot_compare_to_random_metrics(model_trainer, random_model_trainer, args.save_path)
 
     elif args.mode == 'All':
         random = RandomQueryStrategy(dm)
