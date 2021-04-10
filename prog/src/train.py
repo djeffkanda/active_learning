@@ -12,6 +12,7 @@ Other: Suggestions are welcome
 import argparse
 import torch.optim as optim
 import torch.nn as nn
+import copy
 
 from utils import get_data
 from viz import plot_query_strategy_metrics, plot_compare_to_random_metrics, plot_all_metrics
@@ -133,20 +134,20 @@ if __name__ == "__main__":
         if args.mode == 'Single':
             plot_query_strategy_metrics(model_trainer, args.save_path)
         elif args.mode == 'Compare':
-            random_query = RandomQueryStrategy(dm)
+            random_query = RandomQueryStrategy(copy.deepcopy(dm))
             random_model_trainer = TrainTestManager(model=model,
                                                     querier=query_strategy,
                                                     loss_fn=nn.CrossEntropyLoss(),
                                                     optimizer_factory=optimizer_factory)
             print('Training using Random Query Strategy')
             random_model_trainer.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
-            plot_compare_to_random_metrics(model_trainer, random_model_trainer, args.savepath)
+            plot_compare_to_random_metrics(model_trainer, random_model_trainer, args.save_path)
 
     elif args.mode == 'All':
         random = RandomQueryStrategy(dm)
-        entropy = EntropyQueryStrategy(dm)
-        #uncertain = UnecertaintyQueyStrategy(dm)
-        #margin = MarginQueryStrategy(dm)
+        entropy = EntropyQueryStrategy(copy.deepcopy(dm))
+        #uncertain = UnecertaintyQueyStrategy(copy.deepcopy(dm))
+        #margin = MarginQueryStrategy(copy.deepcopy(dm))
 
         random_manager = TrainTestManager(model=model,
                                           querier=random,
@@ -176,6 +177,6 @@ if __name__ == "__main__":
         print('Training using Margin Query Strategy')
         #margin_manager.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
 
-        #plot_all_metrics(random_manager, entropy_manager, uncertain_manager, margin_manager, args.savepath)
+        #plot_all_metrics(random_manager, entropy_manager, uncertain_manager, margin_manager, args.save_path)
 
     # TODO adjust num_query with threshold
