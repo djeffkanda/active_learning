@@ -128,10 +128,10 @@ if __name__ == "__main__":
                                          querier=query_strategy,
                                          loss_fn=nn.CrossEntropyLoss(),
                                          optimizer_factory=optimizer_factory)
-        print('Training using {} Query Strategy'.format(query_strategy.__name__))
-        model_trainer.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
 
         if args.mode == 'Single':
+            print('Training using {} Query Strategy'.format(query_strategy.__name__))
+            model_trainer.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
             plot_query_strategy_metrics(model_trainer, args.save_path)
         elif args.mode == 'Compare':
             random_query = RandomQueryStrategy(copy.deepcopy(dm))
@@ -142,6 +142,9 @@ if __name__ == "__main__":
             print('Training using Random Query Strategy')
             random_model_trainer.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
             plot_compare_to_random_metrics(model_trainer, random_model_trainer, args.save_path)
+            print('Training using {} Query Strategy'.format(query_strategy.__name__))
+            model_trainer.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
+            plot_query_strategy_metrics(model_trainer, args.save_path)
 
     elif args.mode == 'All':
         random = RandomQueryStrategy(dm)
