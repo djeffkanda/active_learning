@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from query_strats.DataManager import DataManager
 from models.CNNBaseModel import CNNBaseModel
 
+
 class QueryStrategy(ABC):
     """
     This class define a pooling strategy for active learning

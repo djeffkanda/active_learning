@@ -131,7 +131,7 @@ class TrainTestManager(object):
         self.metric_values['number_of_data'].append(len(self.querier.get_datamanager().get_train_set()) *
                                                     self.querier.get_datamanager().batch_size)
 
-        for iteration in range(int(num_query ) + 1):
+        for iteration in range(int(num_query) + 1):
             self.training_iteration(num_epochs)
             self.evaluate_on_test_set()
 
@@ -143,7 +143,8 @@ class TrainTestManager(object):
                 indices = self.querier.execute_query(query_size, self.model, device=self.device, batch=1000)
                 print('Adding {} new data to train set'.format(query_size))
                 self.querier.update_label(indices)  # update labels
-                self.metric_values['number_of_data'].append(self.metric_values['number_of_data'][iteration]+query_size)
+                self.metric_values['number_of_data'].append(
+                    self.metric_values['number_of_data'][iteration] + query_size)
 
         print('Finished active learning process')
 

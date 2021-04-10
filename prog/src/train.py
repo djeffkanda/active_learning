@@ -134,7 +134,7 @@ if __name__ == "__main__":
                                          )
 
         if args.mode == 'Single':
-            print('Training using {} Query Strategy'.format(query_strategy.__name__))
+            print('Training using {} Query Strategy'.format(query_strategy.__class__.__name__))
             model_trainer.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size)
             plot_query_strategy_metrics(model_trainer, args.save_path)
         elif args.mode == 'Compare':
@@ -147,7 +147,7 @@ if __name__ == "__main__":
             print('Training using Random Query Strategy')
             random_model_trainer.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size)
 
-            print('Training using {} Query Strategy'.format(query_strategy.__name__))
+            print('Training using {} Query Strategy'.format(query_strategy.__class__.__name__))
             model_trainer.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size)
 
             plot_compare_to_random_metrics(model_trainer, random_model_trainer, args.save_path)
