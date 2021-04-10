@@ -16,6 +16,7 @@ class EntropyQueryStrategy(QueryStrategy):
         :param kwargs: others key arguments to use.
         """
         super().__init__(dm, **kwargs)
+        self.__name__ = 'Entropy'
         self.kwargs = kwargs
 
     def get_datamanager(self):

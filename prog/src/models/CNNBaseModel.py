@@ -81,3 +81,6 @@ class CNNBaseModel(nn.Module):
         scores = self.forward(x)
         prob = F.softmax(scores, dim=1)
         return prob
+
+    def reset_weights(self):
+        self._initialize_weights()

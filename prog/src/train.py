@@ -10,8 +10,10 @@ Authors: D'Jeff Kanda, Gabriel McCarthy, Mohamed Ragued
 import argparse
 import torch.optim as optim
 import torch.nn as nn
+import copy
 
 from utils import get_data
+from viz import plot_query_strategy_metrics, plot_compare_to_random_metrics, plot_all_metrics
 from query_strats.DataManager import DataManager as DM
 from TrainTestManager import TrainTestManager, optimizer_setup
 
@@ -23,6 +25,7 @@ from query_strats.RandomQueryStrategy import RandomQueryStrategy
 from query_strats.EntropyQueryStrategy import EntropyQueryStrategy
 from query_strats.LCQueryStrategy import LCQueryStrategy
 from query_strats.MSQueryStrategy import MSQueryStrategy
+
 
 def argument_parser():
     """
@@ -60,6 +63,7 @@ def argument_parser():
                         help='Percentage of training data as threshold to stop active learning process')
     parser.add_argument('--data_aug', action='store_true',
                         help="Data augmentation")
+    parser.add_argument('--mode', type=str, default='Single', choices=['Single', 'Compare', 'All'])
     parser.add_argument('--save_path', type=str, default="./", help='The path where the output will be stored,'
                                                                     'model weights as well as the figures of '
                                                                     'experiments')
@@ -78,7 +82,6 @@ if __name__ == "__main__":
     query_size = args.query_size
     data_augment = args.data_aug
 
-    num_query = 0
     # Loading the data
     train_set, test_set = get_data(data_augment, args.dataset)
     if val_set is not None:
@@ -87,6 +90,9 @@ if __name__ == "__main__":
     else:
         dm = DM(train_set, test_set, batch_size=batch_size,
                 initial_train_dataset_ratio=initial_data_ratio)
+
+    # TODO adjust num_query with threshold
+    num_query = len(train_set) * train_set_threshold * (1 - initial_data_ratio) // query_size
 
     if args.optimizer == 'SGD':
         optimizer_factory = optimizer_setup(optim.SGD, lr=learning_rate, momentum=0.9)
@@ -109,24 +115,75 @@ if __name__ == "__main__":
     elif args.model == 'DenseNet':
         model = DenseNet(num_channels=num_channels, num_classes=num_classes)
 
-    if args.query_strategy == 'Random':
-        query_strategy = RandomQueryStrategy(dm)
-    elif args.query_strategy == 'LC':
-        query_strategy = LCQueryStrategy(dm)
-        pass
-    elif args.query_strategy == 'Margin':
-        query_strategy = MSQueryStrategy(dm)
-        pass
-    elif args.query_strategy == 'Entropy':
-        query_strategy = EntropyQueryStrategy(dm)
-        pass
+    if args.mode == 'Single' or args.mode == 'Compare':
+        if args.query_strategy == 'Random':
+            query_strategy = RandomQueryStrategy(dm)
+        elif args.query_strategy == 'LC':
+            query_strategy = LCQueryStrategy(dm)
+            pass
+        elif args.query_strategy == 'Margin':
+            query_strategy = MSQueryStrategy(dm)
+            pass
+        elif args.query_strategy == 'Entropy':
+            query_strategy = EntropyQueryStrategy(dm)
 
-    model_trainer = TrainTestManager(model=model,
-                                     querier=query_strategy,
-                                     loss_fn=nn.CrossEntropyLoss(),
-                                     optimizer_factory=optimizer_factory,
-                                     use_cuda=True)
+        model_trainer = TrainTestManager(model=model,
+                                         querier=query_strategy,
+                                         loss_fn=nn.CrossEntropyLoss(),
+                                         optimizer_factory=optimizer_factory,
+                                         )
 
-    num_query = len(train_set) * train_set_threshold * (1 - initial_data_ratio) // query_size
-    model_trainer.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size)
-    # TODO adjust num_query with threshold
+        if args.mode == 'Single':
+            print('Training using {} Query Strategy'.format(query_strategy.__name__))
+            model_trainer.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size)
+            plot_query_strategy_metrics(model_trainer, args.save_path)
+        elif args.mode == 'Compare':
+            random_query = RandomQueryStrategy(copy.deepcopy(dm))
+            random_model_trainer = TrainTestManager(model=model,
+                                                    querier=random_query,
+                                                    loss_fn=nn.CrossEntropyLoss(),
+                                                    optimizer_factory=optimizer_factory)
+            # Training
+            print('Training using Random Query Strategy')
+            random_model_trainer.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size)
+
+            print('Training using {} Query Strategy'.format(query_strategy.__name__))
+            model_trainer.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size)
+
+            plot_compare_to_random_metrics(model_trainer, random_model_trainer, args.save_path)
+
+    elif args.mode == 'All':
+        random = RandomQueryStrategy(dm)
+        entropy = EntropyQueryStrategy(copy.deepcopy(dm))
+        lc = LCQueryStrategy(copy.deepcopy(dm))
+        margin = MSQueryStrategy(copy.deepcopy(dm))
+
+        random_manager = TrainTestManager(model=model,
+                                          querier=random,
+                                          loss_fn=nn.CrossEntropyLoss(),
+                                          optimizer_factory=optimizer_factory)
+        print('Training using Random Query Strategy')
+        random_manager.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size)
+
+        entropy_manager = TrainTestManager(model=model,
+                                           querier=entropy,
+                                           loss_fn=nn.CrossEntropyLoss(),
+                                           optimizer_factory=optimizer_factory)
+        print('Training using Entropy Query Strategy')
+        entropy_manager.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size)
+
+        lc_manager = TrainTestManager(model=model,
+                                      querier=lc,
+                                      loss_fn=nn.CrossEntropyLoss(),
+                                      optimizer_factory=optimizer_factory)
+        print('Training using Least Confidence Query Strategy')
+        lc_manager.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size)
+
+        margin_manager = TrainTestManager(model=model,
+                                          querier=margin,
+                                          loss_fn=nn.CrossEntropyLoss(),
+                                          optimizer_factory=optimizer_factory)
+        print('Training using Margin Query Strategy')
+        margin_manager.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size)
+
+        plot_all_metrics(random_manager, entropy_manager, lc_manager, margin_manager, args.save_path)

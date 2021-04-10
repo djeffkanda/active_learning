@@ -15,6 +15,7 @@ class RandomQueryStrategy(QueryStrategy):
         :param kwargs: others key arguments to use.
         """
         super().__init__(dm, **kwargs)
+        self.__name__ = 'Random'
 
     def get_datamanager(self):
         return self.dm
