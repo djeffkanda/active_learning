@@ -16,7 +16,7 @@ class TrainTestManager(object):
     def __init__(self, model, querier: QueryStrategy,
                  loss_fn: torch.nn.Module,
                  optimizer_factory: Callable[[torch.nn.Module], torch.optim.Optimizer],
-                 use_cuda=False):
+                 use_cuda=True):
         """
         Args:
             model: model to train
@@ -140,7 +140,7 @@ class TrainTestManager(object):
 
             if iteration < num_query:
                 print('Querying new data...')
-                indices = self.querier.execute_query(query_size, self.model)
+                indices = self.querier.execute_query(query_size, self.model, self.device, 20)  # TODO verify if batch_size or something else
                 print('Adding {} new data to train set'.format(query_size))
                 self.querier.update_label(indices)  # update labels
                 self.metric_values['number_of_data'].append(self.metric_values['number_of_data'][iteration]+query_size)
