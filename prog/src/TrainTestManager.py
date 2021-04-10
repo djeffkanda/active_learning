@@ -116,6 +116,9 @@ class TrainTestManager(object):
         """
         Train the model until reaching complete_data_ratio of labeled instances
         """
+
+        self.model.reset_weights()
+
         # Initialize metrics container
         self.metric_values['global_train_loss'] = []
         self.metric_values['global_train_accuracy'] = []

@@ -14,7 +14,7 @@ import torch.optim as optim
 import torch.nn as nn
 
 from utils import get_data
-from viz import plot_query_strategy_metrics
+from viz import plot_query_strategy_metrics, plot_compare_to_random_metrics, plot_all_metrics
 from query_strats.DataManager import DataManager as DM
 from TrainTestManager import TrainTestManager, optimizer_setup
 
@@ -62,6 +62,7 @@ def argument_parser():
                         help='Percentage of training data as threshold to stop active learning process')
     parser.add_argument('--data_aug', action='store_true',
                         help="Data augmentation")
+    parser.add_argument('--mode', type=str, default='Single', choices=['Single', 'Compare', 'All'])
     parser.add_argument('--save_path', type=str, default="./", help='The path where the output will be stored,'
                                                                     'model weights as well as the figures of '
                                                                     'experiments')
@@ -110,22 +111,71 @@ if __name__ == "__main__":
     elif args.model == 'DenseNet':
         model = DenseNet(num_channels=num_channels, num_classes=num_classes)
 
-    if args.query_strategy == 'Random':
-        query_strategy = RandomQueryStrategy(dm)
-    elif args.query_strategy == 'Uncertainty':
-        #  query_strategy = UncertaintyQueryStrategy(dm)
-        pass
-    elif args.query_strategy == 'Margin':
-        #  query_strategy = MarginQueryStrategy(dm)
-        pass
-    elif args.query_strategy == 'Entropy':
-        query_strategy = EntropyQueryStrategy(dm)
+    if args.mode == 'Single' or args.mode == 'Compare':
+        if args.query_strategy == 'Random':
+            query_strategy = RandomQueryStrategy(dm)
+        elif args.query_strategy == 'Uncertainty':
+            #  query_strategy = UncertaintyQueryStrategy(dm)
+            pass
+        elif args.query_strategy == 'Margin':
+            #  query_strategy = MarginQueryStrategy(dm)
+            pass
+        elif args.query_strategy == 'Entropy':
+            query_strategy = EntropyQueryStrategy(dm)
 
-    model_trainer = TrainTestManager(model=model,
-                                     querier=query_strategy,
-                                     loss_fn=nn.CrossEntropyLoss(),
-                                     optimizer_factory=optimizer_factory)
+        model_trainer = TrainTestManager(model=model,
+                                         querier=query_strategy,
+                                         loss_fn=nn.CrossEntropyLoss(),
+                                         optimizer_factory=optimizer_factory)
+        print('Training using {} Query Strategy'.format(query_strategy.__name__))
+        model_trainer.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
 
-    model_trainer.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
-    plot_query_strategy_metrics(model_trainer, args.save_path)
+        if args.mode == 'Single':
+            plot_query_strategy_metrics(model_trainer, args.save_path)
+        elif args.mode == 'Compare':
+            random_query = RandomQueryStrategy(dm)
+            random_model_trainer = TrainTestManager(model=model,
+                                                    querier=query_strategy,
+                                                    loss_fn=nn.CrossEntropyLoss(),
+                                                    optimizer_factory=optimizer_factory)
+            print('Training using Random Query Strategy')
+            random_model_trainer.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
+            plot_compare_to_random_metrics(model_trainer, random_model_trainer, args.savepath)
+
+    elif args.mode == 'All':
+        random = RandomQueryStrategy(dm)
+        entropy = EntropyQueryStrategy(dm)
+        #uncertain = UnecertaintyQueyStrategy(dm)
+        #margin = MarginQueryStrategy(dm)
+
+        random_manager = TrainTestManager(model=model,
+                                          querier=random,
+                                          loss_fn=nn.CrossEntropyLoss(),
+                                          optimizer_factory=optimizer_factory)
+        print('Training using Random Query Strategy')
+        random_manager.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
+
+        entropy_manager = TrainTestManager(model=model,
+                                           querier=entropy,
+                                           loss_fn=nn.CrossEntropyLoss(),
+                                           optimizer_factory=optimizer_factory)
+        print('Training using Entropy Query Strategy')
+        entropy_manager.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
+
+        #uncertain_manager = TrainTestManager(model=model,
+        #                                  querier=uncertain,
+        #                                  loss_fn=nn.CrossEntropyLoss(),
+        #                                  optimizer_factory=optimizer_factory)
+        print('Training using Uncertainty Query Strategy')
+        #uncertain_manager.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
+
+        #margin_manager = TrainTestManager(model=model,
+        #                                  querier=random,
+        #                                  loss_fn=nn.CrossEntropyLoss(),
+        #                                  optimizer_factory=optimizer_factory)
+        print('Training using Margin Query Strategy')
+        #margin_manager.train(num_epochs=num_epochs, num_query=5, query_size=query_size)
+
+        #plot_all_metrics(random_manager, entropy_manager, uncertain_manager, margin_manager, args.savepath)
+
     # TODO adjust num_query with threshold
