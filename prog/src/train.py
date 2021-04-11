@@ -12,7 +12,7 @@ import torch.optim as optim
 import torch.nn as nn
 import copy
 
-from utils import get_data
+from utils import get_data, check_dir
 from viz import plot_query_strategy_metrics, plot_compare_to_random_metrics, plot_all_metrics
 from query_strats.DataManager import DataManager as DM
 from TrainTestManager import TrainTestManager, optimizer_setup
@@ -90,8 +90,10 @@ if __name__ == "__main__":
     else:
         dm = DM(train_set, test_set, batch_size=batch_size,
                 initial_train_dataset_ratio=initial_data_ratio)
+    # safely create save path
+    check_dir(args.save_path)
 
-    # TODO adjust num_query with threshold
+    # adjust num_query with threshold
     num_query = len(train_set) * train_set_threshold * (1 - initial_data_ratio) // query_size
 
     if args.optimizer == 'SGD':
@@ -163,14 +165,16 @@ if __name__ == "__main__":
                                           loss_fn=nn.CrossEntropyLoss(),
                                           optimizer_factory=optimizer_factory)
         print('Training using Random Query Strategy')
-        random_manager.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size)
+        random_manager.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size,
+                             save_path=args.save_path)
 
         entropy_manager = TrainTestManager(model=model,
                                            querier=entropy,
                                            loss_fn=nn.CrossEntropyLoss(),
                                            optimizer_factory=optimizer_factory)
         print('Training using Entropy Query Strategy')
-        entropy_manager.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size)
+        entropy_manager.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size,
+                              save_path=args.save_path)
 
         lc_manager = TrainTestManager(model=model,
                                       querier=lc,
@@ -184,6 +188,8 @@ if __name__ == "__main__":
                                           loss_fn=nn.CrossEntropyLoss(),
                                           optimizer_factory=optimizer_factory)
         print('Training using Margin Query Strategy')
-        margin_manager.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size)
+        margin_manager.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size,
+                             save_path=args.save_path
+                             )
 
         plot_all_metrics(random_manager, entropy_manager, lc_manager, margin_manager, args.save_path)

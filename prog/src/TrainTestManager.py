@@ -6,6 +6,7 @@ import numpy as np
 from typing import Callable, Type
 from tqdm import tqdm
 from query_strats.QueryStrategy import QueryStrategy
+from tempfile import TemporaryFile
 
 
 class TrainTestManager(object):
@@ -21,15 +22,9 @@ class TrainTestManager(object):
         Args:
             model: model to train
             querier: query_strategy object for active learning
-            trainset: dataset used to train the model
-            testset: dataset used to test the model
-            batch_size: size of minibatch
-            initial_train_dataset_ratio: percentage of data queried
-            for first iteration of active learning process
             loss_fn: the loss function used
             optimizer_factory: A callable to create the optimizer. see optimizer function
             below for more details
-            validation: wether to use custom validation data or let the one by default
             use_cuda: to Use the gpu to train the model
         """
         device_name = 'cuda:0' if use_cuda else 'cpu'
@@ -112,7 +107,7 @@ class TrainTestManager(object):
         self.metric_values['global_val_loss'].append(np.mean(metrics['val_loss']))
         self.metric_values['global_val_accuracy'].append(np.mean(metrics['val_accuracy']))
 
-    def train(self, num_epochs, num_query, query_size):
+    def train(self, num_epochs, num_query, query_size, save_metrics=True, save_path='./'):
         """
         Train the model until reaching complete_data_ratio of labeled instances
         """
@@ -145,7 +140,16 @@ class TrainTestManager(object):
                 self.querier.update_label(indices)  # update labels
                 self.metric_values['number_of_data'].append(
                     self.metric_values['number_of_data'][iteration] + query_size)
-
+        if save_metrics:
+            np.savez_compressed(f'{save_path}{self.querier.__class__.__name__}_{self.model.__class__.__name__}',
+                                global_train_loss=np.array(self.metric_values['global_train_loss']),
+                                global_train_accuracy=np.array(self.metric_values['global_train_accuracy']),
+                                global_val_loss=np.array(self.metric_values['global_val_loss']),
+                                global_val_accuracy=np.array(self.metric_values['global_val_accuracy']),
+                                global_test_loss=np.array(self.metric_values['global_test_loss']),
+                                global_test_accuracy=np.array(self.metric_values['global_test_accuracy']),
+                                number_of_data=np.array(self.metric_values['number_of_data']),
+                                )
         print('Finished active learning process')
 
     def evaluate_on_validation_set(self):
