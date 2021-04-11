@@ -30,3 +30,6 @@ class QueryStrategy(ABC):
         idx: indices of unlabeled data sample to label
         """
         pass
+
+    def free_up_mem(self):
+        del self.dm

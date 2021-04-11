@@ -155,15 +155,16 @@ if __name__ == "__main__":
             plot_compare_to_random_metrics(model_trainer, random_model_trainer, args.save_path)
 
     elif args.mode == 'All':
-        random = RandomQueryStrategy(dm)
+        random = RandomQueryStrategy(copy.deepcopy(dm))
         entropy = EntropyQueryStrategy(copy.deepcopy(dm))
         lc = LCQueryStrategy(copy.deepcopy(dm))
         margin = MSQueryStrategy(copy.deepcopy(dm))
+        del dm
 
-        random_manager = TrainTestManager(model=model,
+        random_manager = TrainTestManager(model=copy.deepcopy(model),
                                           querier=random,
                                           loss_fn=nn.CrossEntropyLoss(),
-                                          optimizer_factory=optimizer_factory)
+                                          optimizer_factory=copy.deepcopy(optimizer_factory))
         print('Training using Random Query Strategy')
         random_manager.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size,
                              save_path=args.save_path)

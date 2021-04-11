@@ -1,12 +1,13 @@
 # -*- coding:utf-8 -*-
-
+import gc
 import warnings
-import torch
-import numpy as np
 from typing import Callable, Type
+
+import numpy as np
+import torch
 from tqdm import tqdm
+
 from query_strats.QueryStrategy import QueryStrategy
-from tempfile import TemporaryFile
 
 
 class TrainTestManager(object):
@@ -107,7 +108,7 @@ class TrainTestManager(object):
         self.metric_values['global_val_loss'].append(np.mean(metrics['val_loss']))
         self.metric_values['global_val_accuracy'].append(np.mean(metrics['val_accuracy']))
 
-    def train(self, num_epochs, num_query, query_size, save_metrics=True, save_path='./'):
+    def train(self, num_epochs, num_query, query_size, save_metrics=True, save_path='./', free_up_mem=True):
         """
         Train the model until reaching complete_data_ratio of labeled instances
         """
@@ -150,6 +151,16 @@ class TrainTestManager(object):
                                 global_test_accuracy=np.array(self.metric_values['global_test_accuracy']),
                                 number_of_data=np.array(self.metric_values['number_of_data']),
                                 )
+        # GPUtil.showUtilization()
+        if free_up_mem:
+            self.querier.free_up_mem()
+            self.model.to('cpu')
+            del self.model, self.optimizer, self.loss_fn
+            gc.collect()
+
+        if self.use_cuda:
+            torch.cuda.empty_cache()
+        # GPUtil.showUtilization()
         print('Finished active learning process')
 
     def evaluate_on_validation_set(self):
