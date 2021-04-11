@@ -113,7 +113,7 @@ class SENet(CNNBaseModel):
         self.final_block = nn.Sequential(
             nn.AvgPool2d(kernel_size=7),  # Global pooling
             nn.Flatten(),
-            nn.Linear(2048, 10)
+            nn.Linear(2048, num_classes)
         )
 
     def forward(self, x):

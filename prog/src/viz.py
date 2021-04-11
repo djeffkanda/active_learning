@@ -89,7 +89,7 @@ def plot_all_metrics(random_manager: TrainTestManager, entropy_manager: TrainTes
 
     num_data = random_manager.metric_values['number_of_data']
 
-    f = plt.figure(figsize=(10, 7))
+    f = plt.figure(figsize=(10, 5))
     ax1 = f.add_subplot(121)
     ax2 = f.add_subplot(122)
 
