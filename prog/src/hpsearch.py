@@ -8,26 +8,23 @@ Authors: D'Jeff Kanda, Gabriel McCarthy, Mohamed Ragued
 """
 
 import argparse
-import torch.optim as optim
+from itertools import product
+
 import torch.nn as nn
-import copy
+import torch.optim as optim
+from torch.utils.tensorboard import SummaryWriter
 
-from utils import get_data, check_dir
-from viz import plot_query_strategy_metrics, plot_compare_to_random_metrics, plot_all_metrics
-from query_strats.DataManager import DataManager as DM
 from TrainTestManager import TrainTestManager, optimizer_setup
-
-from models.SimpleModel import SimpleModel
-from models.SENet import SENet
-from models.ResNet import ResNet
 from models.DenseNet import DenseNet
-from query_strats.RandomQueryStrategy import RandomQueryStrategy
+from models.ResNet import ResNet
+from models.SENet import SENet
+from models.SimpleModel import SimpleModel
+from query_strats.DataManager import DataManager as DM
 from query_strats.EntropyQueryStrategy import EntropyQueryStrategy
 from query_strats.LCQueryStrategy import LCQueryStrategy
 from query_strats.MSQueryStrategy import MSQueryStrategy
-from itertools import product
-import torch
-from torch.utils.tensorboard import SummaryWriter
+from query_strats.RandomQueryStrategy import RandomQueryStrategy
+from utils import get_data, check_dir
 
 
 def argument_parser():

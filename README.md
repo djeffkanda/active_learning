@@ -50,3 +50,28 @@ a graph that compares different results(accuracy and loss).
 * `--optimizer`: the optimizer, `Adam` or `SGD`
 *  `--lr` : the learning rate
 *  `--data_aug`: boolean value for data augmentation
+
+## Hyper parameters search
+
+An intensive search of hyper parameters can be run using the command below:
+```
+python -u hpsearch.py --dataset=cifar100 --model=ResNet --data_aug --query_strategy=Margin --save_path=./runs
+```
+
+This command will run a search of hyper parameters for the `ResNet` model on `cifar100` dataset with data augmentation,
+and the pooling will be done using the `Margin Sampling` strategy.
+
+The progress of the search can be monitored using `tensor board` by running the following commands:
+To start tensorboard run,
+```
+tensorboard --logdir=runs
+```
+Then by default, tensor board starts at this address: `http://localhost:6006/`.
+
+If the code is run from a remote machine that can be accessed via `ssh`, then use the command below
+to create a `ssh tunnel`:
+
+```
+ssh -N -f -L localhost:[local port]:localhost:[remote port] [uname]@[remote address]
+```
+
