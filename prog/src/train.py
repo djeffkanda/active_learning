@@ -182,7 +182,8 @@ if __name__ == "__main__":
                                       loss_fn=nn.CrossEntropyLoss(),
                                       optimizer_factory=optimizer_factory)
         print('Training using Least Confidence Query Strategy')
-        lc_manager.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size)
+        lc_manager.train(num_epochs=num_epochs, num_query=num_query, query_size=query_size,
+                         save_path=args.save_path)
 
         margin_manager = TrainTestManager(model=model,
                                           querier=margin,
