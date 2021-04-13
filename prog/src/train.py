@@ -122,18 +122,15 @@ if __name__ == "__main__":
             query_strategy = RandomQueryStrategy(dm)
         elif args.query_strategy == 'LC':
             query_strategy = LCQueryStrategy(dm)
-            pass
         elif args.query_strategy == 'Margin':
             query_strategy = MSQueryStrategy(dm)
-            pass
         elif args.query_strategy == 'Entropy':
             query_strategy = EntropyQueryStrategy(dm)
 
         model_trainer = TrainTestManager(model=model,
                                          querier=query_strategy,
                                          loss_fn=nn.CrossEntropyLoss(),
-                                         optimizer_factory=optimizer_factory,
-                                         )
+                                         optimizer_factory=optimizer_factory)
 
         if args.mode == 'Single':
             print('Training using {} Query Strategy'.format(query_strategy.__class__.__name__))
