@@ -136,13 +136,6 @@ if __name__ == "__main__":
         # initialize the writer
         writer = SummaryWriter(args.save_path + f"/{hp_str}")
         for i in range(len(model_trainer.metric_values['global_train_loss'])):
-            # self.metric_values['global_train_loss'] = []
-            # self.metric_values['global_train_accuracy'] = []
-            # self.metric_values['global_val_loss'] = []
-            # self.metric_values['global_val_accuracy'] = []
-            # self.metric_values['global_test_loss'] = []
-            # self.metric_values['global_test_accuracy'] = []
-            # self.metric_values['number_of_data'] = []
             writer.add_scalar('global_test_accuracy', model_trainer.metric_values['global_test_accuracy'][i],
                               model_trainer.metric_values['number_of_data'][i])
             writer.add_scalar('global_test_loss', model_trainer.metric_values['global_test_loss'][i],
