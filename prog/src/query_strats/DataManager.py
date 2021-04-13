@@ -8,10 +8,35 @@ class MaskSampler(Sampler):
         self.mask = mask
 
     def __iter__(self):
-        return (self.indices[i] for i in torch.nonzero(self.mask))
+        return (self.indices[i] for i in torch.nonzero(self.mask)[0])
 
     def __len__(self):
         return len(self.mask)
+
+
+class MyDataset(Dataset):
+    def __init__(self, dataset):
+        self.dataset = dataset
+
+    def __getitem__(self, index):
+        data, target = self.dataset[index]
+        return data, target, index
+
+    def __len__(self):
+        return len(self.dataset)
+
+
+class MySubset(Subset):
+    r"""
+    Subset of a dataset at specified indices.
+
+    Args:
+        dataset (Dataset): The whole Dataset
+        indices (sequence): Indices in the whole set selected for subset
+    """
+
+    def __getitem__(self, idx):
+        return self.dataset[self.indices[idx]] + (idx, )
 
 
 class DataManager(object):
@@ -59,7 +84,7 @@ class DataManager(object):
         self.train_unlabeled_mask[shuffled_idx[:num_sample]] = 1
 
         train_labeled_index = shuffled_idx[:num_sample]
-        self.current_train_set = Subset(train_dataset, train_labeled_index)
+        self.current_train_set = MySubset(train_dataset, train_labeled_index)
 
         # Create the loaders
         train_sampler, val_sampler = self.train_validation_split(len(self.current_train_set), self.validation,
@@ -74,9 +99,17 @@ class DataManager(object):
         :return:
         unlabeled dataset and indices,
         """
-        unlabeled_indices = (self.train_unlabeled_mask == 0).nonzero()
-        unlabeled_data = Subset(self.train_set, (self.train_unlabeled_mask == 0).nonzero())
+        unlabeled_indices = (self.train_unlabeled_mask == 0).nonzero().squeeze()
+        unlabeled_data = MySubset(self.train_set, unlabeled_indices)
         return unlabeled_data, unlabeled_indices
+
+    def get_unlabelled_data_loader(self, batch):
+        data, idx = self.get_unlabeled_data()
+        loader = DataLoader(data, batch, shuffle=False, **self.kwargs)
+        return loader, idx
+
+    def get_current_training_set(self):
+        return self.current_train_set
 
     def update_train_set(self, index_to_label):
         """
@@ -85,9 +118,9 @@ class DataManager(object):
         :return:
         train_loader and validation_loader
         """
-        # TODO implement this function according to the discussion tomorrow
         self.train_unlabeled_mask[index_to_label] = 1
-        self.current_train_set = Subset(self.train_set, self.train_unlabeled_mask.nonzero())
+        lbl_sample_idx = self.train_unlabeled_mask.nonzero().squeeze()
+        self.current_train_set = MySubset(self.train_set, lbl_sample_idx)
         train_sampler, val_sampler = self.train_validation_split(len(self.current_train_set), self.validation,
                                                                  self.seed)
         self.train_loader = DataLoader(self.current_train_set, self.batch_size, sampler=train_sampler, **self.kwargs)
@@ -133,3 +166,6 @@ class DataManager(object):
     def get_random_sample_from_test_set(self):
         indice = np.random.randint(0, len(self.test_set))
         return self.test_set[indice]
+
+    def getthi(self):
+        return  self.train_set

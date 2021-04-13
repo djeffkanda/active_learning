@@ -3,6 +3,8 @@ University of Sherbrooke
 NN Class Project
 Authors: D'Jeff Kanda, Gabriel McCarthy, Mohamed Ragued
 """
+import os
+
 import torchvision.transforms as transforms
 from torchvision import datasets
 import torch.nn.functional as F
@@ -86,3 +88,12 @@ def predict_proba(scores):
     """
     prob = F.softmax(scores, dim=1)
     return prob
+
+
+def check_dir(path):
+    """
+    This function ensure that a path exists or create it
+    """
+    directory = os.path.dirname(path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)

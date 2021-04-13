@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from query_strats.DataManager import DataManager
+from models.CNNBaseModel import CNNBaseModel
 
 
 class QueryStrategy(ABC):
@@ -22,10 +23,13 @@ class QueryStrategy(ABC):
     # def update
 
     @abstractmethod
-    def execute_query(self):
+    def execute_query(self, model: CNNBaseModel, device='cpu', batch=1):
         """
         This function returns the indices of new data sample to label
         :return:
         idx: indices of unlabeled data sample to label
         """
         pass
+
+    def free_up_mem(self):
+        del self.dm

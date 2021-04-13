@@ -1,10 +1,13 @@
 # -*- coding:utf-8 -*-
-
+import gc
 import warnings
-import torch
-import numpy as np
 from typing import Callable, Type
+
+import numpy as np
+import torch
 from tqdm import tqdm
+
+from query_strats.QueryStrategy import QueryStrategy
 
 
 class TrainTestManager(object):
@@ -12,28 +15,17 @@ class TrainTestManager(object):
     Class used to train and test model given model and query strategy
     """
 
-    def __init__(self, model, querier,
-                 trainset: torch.utils.data.Dataset,
-                 testset: torch.utils.data.Dataset,
+    def __init__(self, model, querier: QueryStrategy,
                  loss_fn: torch.nn.Module,
                  optimizer_factory: Callable[[torch.nn.Module], torch.optim.Optimizer],
-                 batch_size=1,
-                 initial_train_dataset_ratio=0.2,
-                 validation=None,
-                 use_cuda=False):
+                 use_cuda=True):
         """
         Args:
             model: model to train
             querier: query_strategy object for active learning
-            trainset: dataset used to train the model
-            testset: dataset used to test the model
-            batch_size: size of minibatch
-            initial_train_dataset_ratio: percentage of data queried
-            for first iteration of active learning process
             loss_fn: the loss function used
             optimizer_factory: A callable to create the optimizer. see optimizer function
             below for more details
-            validation: wether to use custom validation data or let the one by default
             use_cuda: to Use the gpu to train the model
         """
         device_name = 'cuda:0' if use_cuda else 'cpu'
@@ -116,30 +108,59 @@ class TrainTestManager(object):
         self.metric_values['global_val_loss'].append(np.mean(metrics['val_loss']))
         self.metric_values['global_val_accuracy'].append(np.mean(metrics['val_accuracy']))
 
-    def train(self, num_epochs, num_query, query_size):
+    def train(self, num_epochs, num_query, query_size, save_metrics=True, save_path='./', free_up_mem=True):
         """
         Train the model until reaching complete_data_ratio of labeled instances
         """
+
+        self.model.reset_weights()
+
         # Initialize metrics container
         self.metric_values['global_train_loss'] = []
         self.metric_values['global_train_accuracy'] = []
         self.metric_values['global_val_loss'] = []
         self.metric_values['global_val_accuracy'] = []
-        self.metric_values['test_loss'] = []
-        self.metric_values['test_accuracy'] = []
+        self.metric_values['global_test_loss'] = []
+        self.metric_values['global_test_accuracy'] = []
+        self.metric_values['number_of_data'] = []
 
-        for iteration in range(num_query):
+        self.metric_values['number_of_data'].append(len(self.querier.get_datamanager().get_train_set()) *
+                                                    self.querier.get_datamanager().batch_size)
+
+        for iteration in range(int(num_query) + 1):
             self.training_iteration(num_epochs)
             self.evaluate_on_test_set()
 
-            print('Finished iteration {} of {} of active learning process'.format(iteration+1,
-                                                                                  num_query))
-            print('Accuracy on test set: {:05.3f}%'.format(self.metric_values['test_accuracy'][iteration]*100))
-            print('Querying new data...')
-            indices = self.querier.execute_query(query_size, self.model)
-            print('Adding {} new data to train set'.format(query_size))
-            self.querier.update_label(indices)  # update labels
+            print('Finished iteration {} of {} of active learning process'.format(iteration + 1, num_query + 1))
+            print('Accuracy on test set: {:05.3f}%'.format(self.metric_values['global_test_accuracy'][iteration] * 100))
 
+            if iteration < num_query:
+                print('Querying new data...')
+                indices = self.querier.execute_query(query_size, self.model, device=self.device, batch=1000)
+                print('Adding {} new data to train set'.format(query_size))
+                self.querier.update_label(indices)  # update labels
+                self.metric_values['number_of_data'].append(
+                    self.metric_values['number_of_data'][iteration] + query_size)
+        if save_metrics:
+            np.savez_compressed(f'{save_path}{self.querier.__class__.__name__}_{self.model.__class__.__name__}',
+                                global_train_loss=np.array(self.metric_values['global_train_loss']),
+                                global_train_accuracy=np.array(self.metric_values['global_train_accuracy']),
+                                global_val_loss=np.array(self.metric_values['global_val_loss']),
+                                global_val_accuracy=np.array(self.metric_values['global_val_accuracy']),
+                                global_test_loss=np.array(self.metric_values['global_test_loss']),
+                                global_test_accuracy=np.array(self.metric_values['global_test_accuracy']),
+                                number_of_data=np.array(self.metric_values['number_of_data']),
+                                )
+        # GPUtil.showUtilization()
+        if free_up_mem:
+            self.querier.free_up_mem()
+            self.model.to('cpu')
+            del self.model, self.optimizer, self.loss_fn
+            gc.collect()
+
+        if self.use_cuda:
+            torch.cuda.empty_cache()
+        # GPUtil.showUtilization()
         print('Finished active learning process')
 
     def evaluate_on_validation_set(self):
@@ -197,8 +218,8 @@ class TrainTestManager(object):
                 losses.append(loss.item())
                 accuracies.append(accuracy(test_outputs, test_labels))
 
-        self.metric_values['test_accuracy'].append(np.mean(accuracies))
-        self.metric_values['test_loss'].append(np.mean(losses))
+        self.metric_values['global_test_loss'].append(np.mean(losses))
+        self.metric_values['global_test_accuracy'].append(np.mean(accuracies))
 
 
 def accuracy(outputs, labels):

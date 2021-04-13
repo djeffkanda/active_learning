@@ -2,10 +2,8 @@
 
 """
 University of Sherbrooke
-Date:
-Authors: Mamadou Mountagha BAH & Pierre-Marc Jodoin
-License:
-Other: Suggestions are welcome
+NN Class Project
+Authors: D'Jeff Kanda, Gabriel McCarthy, Mohamed Ragued
 """
 
 import torch.nn as nn
